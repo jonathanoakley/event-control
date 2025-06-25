@@ -35,6 +35,92 @@ const eventAssignments = [
   { id: 8, event_id: 4, user_id: 3, role: 'organizer' }
 ];
 
+// Volunteer data storage
+const volunteers = [
+  {
+    id: 1,
+    name: 'Sarah Johnson',
+    phone: '+1-555-0101',
+    address: '123 Main Street, New York, NY 10001',
+    photoUrl: null,
+    eventCount: 5,
+    eventHistory: [
+      { id: 1, name: 'Summer Festival 2023', date: '2023-07-15', location: 'Central Park', role: 'Event Control' },
+      { id: 2, name: 'Tech Conference 2023', date: '2023-08-20', location: 'Convention Center', role: 'Registration' },
+      { id: 3, name: 'Music Concert 2023', date: '2023-09-10', location: 'Arena', role: 'Security' },
+      { id: 4, name: 'Sports Tournament 2023', date: '2023-10-05', location: 'Sports Complex', role: 'First Aid' },
+      { id: 5, name: 'Winter Gala 2023', date: '2023-12-15', location: 'Grand Hotel', role: 'Event Control' }
+    ]
+  },
+  {
+    id: 2,
+    name: 'Michael Chen',
+    phone: '+1-555-0102',
+    address: '456 Oak Avenue, Los Angeles, CA 90210',
+    photoUrl: null,
+    eventCount: 3,
+    eventHistory: [
+      { id: 1, name: 'Summer Festival 2023', date: '2023-07-15', location: 'Central Park', role: 'Obstacle Manager' },
+      { id: 2, name: 'Tech Conference 2023', date: '2023-08-20', location: 'Convention Center', role: 'Technical Support' },
+      { id: 3, name: 'Sports Tournament 2023', date: '2023-10-05', location: 'Sports Complex', role: 'Equipment Manager' }
+    ]
+  },
+  {
+    id: 3,
+    name: 'Emily Rodriguez',
+    phone: '+1-555-0103',
+    address: '789 Pine Street, Chicago, IL 60601',
+    photoUrl: null,
+    eventCount: 8,
+    eventHistory: [
+      { id: 1, name: 'Summer Festival 2023', date: '2023-07-15', location: 'Central Park', role: 'First Aid' },
+      { id: 2, name: 'Tech Conference 2023', date: '2023-08-20', location: 'Convention Center', role: 'Registration' },
+      { id: 3, name: 'Music Concert 2023', date: '2023-09-10', location: 'Arena', role: 'Event Control' },
+      { id: 4, name: 'Sports Tournament 2023', date: '2023-10-05', location: 'Sports Complex', role: 'Medical Support' },
+      { id: 5, name: 'Winter Gala 2023', date: '2023-12-15', location: 'Grand Hotel', role: 'Catering' },
+      { id: 6, name: 'Spring Marathon 2024', date: '2024-04-20', location: 'City Streets', role: 'Water Station' },
+      { id: 7, name: 'Charity Walk 2024', date: '2024-05-15', location: 'Park District', role: 'Route Marshal' },
+      { id: 8, name: 'Community Fair 2024', date: '2024-06-10', location: 'Community Center', role: 'Event Control' }
+    ]
+  },
+  {
+    id: 4,
+    name: 'David Thompson',
+    phone: '+1-555-0104',
+    address: '321 Elm Street, Houston, TX 77001',
+    photoUrl: null,
+    eventCount: 2,
+    eventHistory: [
+      { id: 1, name: 'Tech Conference 2023', date: '2023-08-20', location: 'Convention Center', role: 'Technical Support' },
+      { id: 2, name: 'Sports Tournament 2023', date: '2023-10-05', location: 'Sports Complex', role: 'Scorekeeper' }
+    ]
+  },
+  {
+    id: 5,
+    name: 'Lisa Wang',
+    phone: '+1-555-0105',
+    address: '654 Maple Drive, Seattle, WA 98101',
+    photoUrl: null,
+    eventCount: 6,
+    eventHistory: [
+      { id: 1, name: 'Summer Festival 2023', date: '2023-07-15', location: 'Central Park', role: 'Registration' },
+      { id: 2, name: 'Music Concert 2023', date: '2023-09-10', location: 'Arena', role: 'Merchandise' },
+      { id: 3, name: 'Winter Gala 2023', date: '2023-12-15', location: 'Grand Hotel', role: 'Event Control' },
+      { id: 4, name: 'Spring Marathon 2024', date: '2024-04-20', location: 'City Streets', role: 'Registration' },
+      { id: 5, name: 'Charity Walk 2024', date: '2024-05-15', location: 'Park District', role: 'Event Control' },
+      { id: 6, name: 'Community Fair 2024', date: '2024-06-10', location: 'Community Center', role: 'First Aid' }
+    ]
+  }
+];
+
+// Volunteer check-ins for events
+const volunteerCheckIns = [
+  { id: 1, volunteerId: 1, eventId: 1, checkInTime: '2024-07-15T08:30:00Z', role: 'Event Control' },
+  { id: 2, volunteerId: 2, eventId: 1, checkInTime: '2024-07-15T08:45:00Z', role: 'Obstacle Manager' },
+  { id: 3, volunteerId: 3, eventId: 1, checkInTime: '2024-07-15T09:00:00Z', role: 'First Aid' },
+  { id: 4, volunteerId: 5, eventId: 1, checkInTime: '2024-07-15T09:15:00Z', role: 'Registration' }
+];
+
 const eventLogs = [
   { 
     id: 1, 
@@ -681,6 +767,351 @@ app.post('/api/admin/event-preferences', authenticateToken, async (req, res) => 
   } catch (error) {
     console.error('Error saving event preferences:', error);
     res.status(500).json({ error: 'Failed to save event preferences' });
+  }
+});
+
+// Update event status
+app.put('/api/events/:eventId/status', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    const { eventId } = req.params;
+    const { status } = req.body;
+
+    // Only admins can update event status
+    if (user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    // Find the event
+    const event = events.find(e => e.id === parseInt(eventId));
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    // Update the event status
+    event.status = status;
+
+    // Log the activity
+    logActivity(req, user, 'update_event_status', 'event', event.id, event.name, {
+      old_status: event.status,
+      new_status: status
+    });
+
+    res.json({ success: true, event });
+  } catch (error) {
+    console.error('Error updating event status:', error);
+    res.status(500).json({ error: 'Failed to update event status' });
+  }
+});
+
+// Volunteer Management Endpoints
+
+// Get all volunteers
+app.get('/api/volunteers', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    
+    // Log the activity
+    logActivity(req, user, 'view_volunteers', 'volunteers', null, null, { count: volunteers.length });
+    
+    res.json(volunteers);
+  } catch (error) {
+    console.error('Error fetching volunteers:', error);
+    res.status(500).json({ error: 'Failed to fetch volunteers' });
+  }
+});
+
+// Get volunteer by ID
+app.get('/api/volunteers/:volunteerId', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    const volunteerId = parseInt(req.params.volunteerId);
+    
+    const volunteer = volunteers.find(v => v.id === volunteerId);
+    
+    if (!volunteer) {
+      return res.status(404).json({ error: 'Volunteer not found' });
+    }
+    
+    // Log the activity
+    logActivity(req, user, 'view_volunteer', 'volunteer', volunteerId, volunteer.name);
+    
+    res.json(volunteer);
+  } catch (error) {
+    console.error('Error fetching volunteer:', error);
+    res.status(500).json({ error: 'Failed to fetch volunteer' });
+  }
+});
+
+// Create new volunteer
+app.post('/api/volunteers', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    const { name, phone, address, photoUrl } = req.body;
+    
+    const newVolunteer = {
+      id: volunteers.length + 1,
+      name,
+      phone,
+      address,
+      photoUrl: photoUrl || null,
+      eventCount: 0,
+      eventHistory: []
+    };
+    
+    volunteers.push(newVolunteer);
+    
+    // Log the activity
+    logActivity(req, user, 'create_volunteer', 'volunteer', newVolunteer.id, name, {
+      phone,
+      address
+    });
+    
+    res.json(newVolunteer);
+  } catch (error) {
+    console.error('Error creating volunteer:', error);
+    res.status(500).json({ error: 'Failed to create volunteer' });
+  }
+});
+
+// Update volunteer
+app.put('/api/volunteers/:volunteerId', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    const volunteerId = parseInt(req.params.volunteerId);
+    const { name, phone, address, photoUrl } = req.body;
+    
+    const volunteerIndex = volunteers.findIndex(v => v.id === volunteerId);
+    
+    if (volunteerIndex === -1) {
+      return res.status(404).json({ error: 'Volunteer not found' });
+    }
+    
+    const updatedVolunteer = {
+      ...volunteers[volunteerIndex],
+      name: name || volunteers[volunteerIndex].name,
+      phone: phone || volunteers[volunteerIndex].phone,
+      address: address || volunteers[volunteerIndex].address,
+      photoUrl: photoUrl !== undefined ? photoUrl : volunteers[volunteerIndex].photoUrl
+    };
+    
+    volunteers[volunteerIndex] = updatedVolunteer;
+    
+    // Log the activity
+    logActivity(req, user, 'update_volunteer', 'volunteer', volunteerId, updatedVolunteer.name, {
+      name,
+      phone,
+      address
+    });
+    
+    res.json(updatedVolunteer);
+  } catch (error) {
+    console.error('Error updating volunteer:', error);
+    res.status(500).json({ error: 'Failed to update volunteer' });
+  }
+});
+
+// Delete volunteer
+app.delete('/api/volunteers/:volunteerId', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    const volunteerId = parseInt(req.params.volunteerId);
+    
+    const volunteerIndex = volunteers.findIndex(v => v.id === volunteerId);
+    
+    if (volunteerIndex === -1) {
+      return res.status(404).json({ error: 'Volunteer not found' });
+    }
+    
+    const volunteer = volunteers[volunteerIndex];
+    volunteers.splice(volunteerIndex, 1);
+    
+    // Remove check-ins for this volunteer
+    const checkInIndex = volunteerCheckIns.findIndex(ci => ci.volunteerId === volunteerId);
+    if (checkInIndex !== -1) {
+      volunteerCheckIns.splice(checkInIndex, 1);
+    }
+    
+    // Log the activity
+    logActivity(req, user, 'delete_volunteer', 'volunteer', volunteerId, volunteer.name);
+    
+    res.json({ success: true, message: 'Volunteer deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting volunteer:', error);
+    res.status(500).json({ error: 'Failed to delete volunteer' });
+  }
+});
+
+// Check-in volunteer to event
+app.post('/api/volunteers/checkin', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    const { volunteerId, eventId, checkInTime, role } = req.body;
+    
+    // Find volunteer and event
+    const volunteer = volunteers.find(v => v.id === volunteerId);
+    const event = events.find(e => e.id === eventId);
+    
+    if (!volunteer) {
+      return res.status(404).json({ error: 'Volunteer not found' });
+    }
+    
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+    
+    // Check if already checked in
+    const existingCheckIn = volunteerCheckIns.find(ci => 
+      ci.volunteerId === volunteerId && ci.eventId === eventId
+    );
+    
+    if (existingCheckIn) {
+      return res.status(400).json({ error: 'Volunteer already checked in to this event' });
+    }
+    
+    // Create check-in record
+    const newCheckIn = {
+      id: volunteerCheckIns.length + 1,
+      volunteerId,
+      eventId,
+      checkInTime: checkInTime || new Date().toISOString(),
+      role: role || 'Volunteer'
+    };
+    
+    volunteerCheckIns.push(newCheckIn);
+    
+    // Update volunteer's event count and history
+    const volunteerIndex = volunteers.findIndex(v => v.id === volunteerId);
+    if (volunteerIndex !== -1) {
+      volunteers[volunteerIndex].eventCount += 1;
+      volunteers[volunteerIndex].eventHistory.push({
+        id: eventId,
+        name: event.name,
+        date: event.start_date,
+        location: event.location,
+        role: role || 'Volunteer'
+      });
+    }
+    
+    // Log the activity
+    logActivity(req, user, 'checkin_volunteer', 'volunteer', volunteerId, volunteer.name, {
+      event_id: eventId,
+      event_name: event.name,
+      role: role || 'Volunteer',
+      check_in_time: newCheckIn.checkInTime
+    });
+    
+    res.json({
+      success: true,
+      checkIn: newCheckIn,
+      volunteer: volunteers[volunteerIndex],
+      message: `${volunteer.name} successfully checked in to ${event.name}`
+    });
+  } catch (error) {
+    console.error('Error checking in volunteer:', error);
+    res.status(500).json({ error: 'Failed to check in volunteer' });
+  }
+});
+
+// Get checked-in volunteers for an event
+app.get('/api/events/:eventId/volunteers/checked-in', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    const eventId = parseInt(req.params.eventId);
+    
+    // Check if user has access to this event
+    const event = events.find(e => e.id === eventId);
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+    
+    // Get check-ins for this event
+    const eventCheckIns = volunteerCheckIns.filter(ci => ci.eventId === eventId);
+    
+    // Get volunteer details for each check-in
+    const checkedInVolunteers = eventCheckIns.map(checkIn => {
+      const volunteer = volunteers.find(v => v.id === checkIn.volunteerId);
+      return {
+        ...volunteer,
+        checkInTime: checkIn.checkInTime,
+        role: checkIn.role
+      };
+    });
+    
+    // Log the activity
+    logActivity(req, user, 'view_checked_in_volunteers', 'event', eventId, event.name, {
+      volunteer_count: checkedInVolunteers.length
+    });
+    
+    res.json(checkedInVolunteers);
+  } catch (error) {
+    console.error('Error fetching checked-in volunteers:', error);
+    res.status(500).json({ error: 'Failed to fetch checked-in volunteers' });
+  }
+});
+
+// Get volunteer check-in history
+app.get('/api/volunteers/:volunteerId/checkins', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    const volunteerId = parseInt(req.params.volunteerId);
+    
+    const volunteer = volunteers.find(v => v.id === volunteerId);
+    if (!volunteer) {
+      return res.status(404).json({ error: 'Volunteer not found' });
+    }
+    
+    // Get all check-ins for this volunteer
+    const volunteerCheckInHistory = volunteerCheckIns
+      .filter(ci => ci.volunteerId === volunteerId)
+      .map(checkIn => {
+        const event = events.find(e => e.id === checkIn.eventId);
+        return {
+          ...checkIn,
+          eventName: event ? event.name : 'Unknown Event',
+          eventLocation: event ? event.location : 'Unknown Location'
+        };
+      });
+    
+    // Log the activity
+    logActivity(req, user, 'view_volunteer_checkins', 'volunteer', volunteerId, volunteer.name, {
+      checkin_count: volunteerCheckInHistory.length
+    });
+    
+    res.json(volunteerCheckInHistory);
+  } catch (error) {
+    console.error('Error fetching volunteer check-ins:', error);
+    res.status(500).json({ error: 'Failed to fetch volunteer check-ins' });
+  }
+});
+
+// Generate QR code for volunteer (returns volunteer ID as QR data)
+app.get('/api/volunteers/:volunteerId/qr', authenticateToken, async (req, res) => {
+  try {
+    const user = req.user;
+    const volunteerId = parseInt(req.params.volunteerId);
+    
+    const volunteer = volunteers.find(v => v.id === volunteerId);
+    if (!volunteer) {
+      return res.status(404).json({ error: 'Volunteer not found' });
+    }
+    
+    // For simplicity, we'll return the volunteer ID as QR data
+    // In a real implementation, you might want to include more data or use a unique identifier
+    const qrData = volunteerId.toString();
+    
+    // Log the activity
+    logActivity(req, user, 'generate_volunteer_qr', 'volunteer', volunteerId, volunteer.name);
+    
+    res.json({
+      volunteerId,
+      volunteerName: volunteer.name,
+      qrData,
+      message: 'QR code data generated successfully'
+    });
+  } catch (error) {
+    console.error('Error generating QR code:', error);
+    res.status(500).json({ error: 'Failed to generate QR code' });
   }
 });
 
